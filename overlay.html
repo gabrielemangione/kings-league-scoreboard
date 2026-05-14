@@ -94,7 +94,12 @@ body{
 }
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 
-.tlogo{width:108px;height:108px;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,.65));flex-shrink:0;min-width:108px;}
+.tlogo{
+  width:108px;height:108px;min-width:108px;max-width:108px;
+  object-fit:contain;
+  filter:drop-shadow(0 4px 8px rgba(0,0,0,.65));
+  flex-shrink:0;
+}
 
 .score{
   width:104px;height:108px;min-width:104px;
@@ -219,15 +224,15 @@ body{
 
   <div class="team-area team-left" id="ta-left">
     <div class="abbr" id="abbr-left">STL</div>
-    <img class="tlogo" id="logo-left" src="" alt="" style="display:none">
+    <img class="tlogo" id="logo-left" src="" alt="" style="visibility:hidden">
     <div class="score" id="score-left">0</div>
   </div>
 
-  <img class="clogo" id="clogo" src="" alt="" style="display:none">
+  <img class="clogo" id="clogo" src="" alt="" style="visibility:hidden">
 
   <div class="team-area team-right" id="ta-right">
     <div class="abbr" id="abbr-right">PBL</div>
-    <img class="tlogo" id="logo-right" src="" alt="" style="display:none">
+    <img class="tlogo" id="logo-right" src="" alt="" style="visibility:hidden">
     <div class="score" id="score-right">0</div>
   </div>
 
@@ -401,7 +406,11 @@ function applyMatchPhase(phase, centerLogo) {
   else        { mp.classList.remove('active'); cl.style.opacity=centerLogo?'1':'0'; }
 }
 
-function setLogo(el,src){ if(!el)return; if(src){el.src=src;el.style.display='';}else{el.src='';el.style.display='none';} }
+function setLogo(el, src) {
+  if (!el) return;
+  if (src) { el.src = src; el.style.visibility = 'visible'; }
+  else      { el.src = ''; el.style.visibility = 'hidden'; }
+}
 function setUsed(el,used){ el.classList.toggle('used',used); }
 function doBump(el,cls){ el.classList.remove('bump','bl','br'); void el.offsetWidth; el.classList.add('bump',cls); setTimeout(()=>el.classList.remove('bump','bl','br'),500); }
 function fmt(s){ s=Math.max(0,s); const m=Math.floor(s/60),sec=s%60; return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`; }
