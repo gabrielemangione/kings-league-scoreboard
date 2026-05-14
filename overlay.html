@@ -60,8 +60,11 @@ body{
   z-index:3;overflow:hidden;transition:background .3s;
   flex-wrap:nowrap;
 }
-.team-left {left:320px; width:480px;padding-left:36px;padding-right:12px;}
-.team-right{right:320px;width:480px;padding-right:36px;padding-left:12px;flex-direction:row-reverse;}
+.team-left {left:320px; width:480px;padding:0;justify-content:flex-start;}
+.team-right{right:320px;width:480px;padding:0;flex-direction:row-reverse;justify-content:flex-start;}
+
+.team-left  .abbr{margin-left:40px;}
+.team-right .abbr{margin-right:40px;}
 
 .team-area.ev-secret{background:var(--secret-color)!important;}
 .team-area.ev-pres  {background:var(--pres-color)!important;}
