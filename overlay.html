@@ -420,7 +420,7 @@ function fmt(s){ s=Math.max(0,s); const m=Math.floor(s/60),sec=s%60; return `${S
 
 const WS_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
 let ws;
-function connect(){ try{ws=new WebSocket(WS_URL);}catch{retry();return;} ws.onopen=()=>clearTimeout(reconnectTimer); ws.onmessage=e=>{try{const m=JSON.parse(e.data);if(m.type==='state')applyState(m.state);}catch{}}; ws.onclose=retry; ws.onerror=()=>ws.close(); }
+function connect(){ try{ws=new WebSocket(WS_URL);}catch{retry();return;} ws.onopen=()=>clearTimeout(reconnectTimer); ws.onmessage=e=>{try{const m=JSON.parse(e.data);if(m.type==='state')applyState(m.state);if(m.type==='tick'){$('timer-disp').textContent=fmt(m.seconds);applyPenalties(m.penalties||[]);applyMatchPhase(m.matchPhase,prevState?prevState.centerLogo:null);}}catch{}}; ws.onclose=retry; ws.onerror=()=>ws.close(); }
 function retry(){ reconnectTimer=setTimeout(connect,3000); }
 if(document.readyState==='complete')connect(); else window.addEventListener('load',connect);
 </script>

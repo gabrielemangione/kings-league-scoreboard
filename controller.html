@@ -228,8 +228,7 @@ hr{border:0;border-top:1px solid var(--border);margin:10px 0;}
       <button class="btn gh btn-sm" id="dir-up"   onclick="setDir('up')">▲ Avanti</button>
     </div>
     <div class="tctrl">
-      <button class="btn g btn-md" id="btn-start" onclick="timerStart()">▶ Start</button>
-      <button class="btn d btn-md"               onclick="timerStop()">⏹ Stop</button>
+      <button class="btn g btn-md" id="btn-start" style="width:100%" onclick="timerStart()">▶ Start</button>
     </div>
     <div class="row" style="margin-bottom:8px;">
       <div class="field"><div class="lbl">Min</div><input type="number" id="t-min" value="10" min="0" max="99"></div>
@@ -386,7 +385,7 @@ function connect() {
   ws.onopen    = () => setWS(true);
   ws.onclose   = () => { setWS(false); reconnTimer = setTimeout(connect, 2500); };
   ws.onerror   = () => ws.close();
-  ws.onmessage = e => { const m=JSON.parse(e.data); if(m.type==='state') syncUI(m.state); };
+  ws.onmessage = e => { const m=JSON.parse(e.data); if(m.type==='state') syncUI(m.state); if(m.type==='tick'){document.getElementById('t-disp').textContent=fmt(m.seconds);document.getElementById('sb-t').textContent=fmt(m.seconds);renderPenalties();} };
 }
 function send(o){ if(ws&&ws.readyState===1) ws.send(JSON.stringify(o)); }
 function setWS(ok){

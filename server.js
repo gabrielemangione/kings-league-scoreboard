@@ -48,6 +48,17 @@ function broadcast(msg) {
   wss.clients.forEach(c => { if (c.readyState === WebSocket.OPEN) c.send(str); });
 }
 
+function broadcastTimerTick() {
+  // Manda solo il tick del timer — molto più leggero
+  const str = JSON.stringify({
+    type: 'tick',
+    seconds: state.timer.seconds,
+    penalties: state.penalties,
+    matchPhase: state.matchPhase,
+  });
+  wss.clients.forEach(c => { if (c.readyState === WebSocket.OPEN) c.send(str); });
+}
+
 function startTimer() {
   if (timerInterval) return;
   state.timer.running = true;
@@ -71,7 +82,7 @@ function startTimer() {
       return p;
     }).filter(p => p.seconds > 0);
 
-    broadcast({ type:'state', state });
+    broadcastTimerTick();
   }, 1000);
 }
 
