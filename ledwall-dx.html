@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<title>LED Wall – Squadra Destra</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--color:#1e90ff;}
+body{
+  width:2000px;height:2000px;
+  background:transparent;overflow:hidden;
+  font-family:Impact,Haettenschweiler,'Arial Narrow Bold',sans-serif;
+  color:#fff;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:40px;
+}
+
+/* linea colore in cima */
+.color-bar{
+  position:absolute;top:0;left:0;right:0;
+  height:14px;background:var(--color);
+}
+
+.logo{
+  width:500px;height:500px;
+  object-fit:contain;
+  filter:drop-shadow(0 12px 40px rgba(0,0,0,.7));
+}
+.logo.hidden{visibility:hidden;}
+
+.abbr{
+  font-size:300px;line-height:1;
+  letter-spacing:6px;color:#fff;
+  text-shadow:0 8px 30px rgba(0,0,0,.7);
+}
+
+.score{
+  font-size:420px;line-height:1;
+  font-variant-numeric:tabular-nums;
+  color:var(--color);
+  text-shadow:0 12px 50px rgba(0,0,0,.8);
+  transition:transform .2s,color .2s;
+}
+.score.bump{transform:scale(1.1);}
+
+/* Penalties */
+.pen-area{
+  display:flex;flex-direction:column;gap:10px;
+  width:90%;
+}
+.pen-row{
+  display:flex;align-items:stretch;
+  opacity:0;transform:translateY(8px);
+  transition:opacity .3s,transform .3s;
+}
+.pen-row.active{opacity:1;transform:translateY(0);}
+.pen-name{
+  font-family:'Arial Narrow',Arial,sans-serif;
+  font-size:55px;font-weight:900;letter-spacing:2px;
+  padding:14px 28px;text-transform:uppercase;
+  flex:1;text-align:center;
+}
+.pen-name.red   {background:#e53935;color:#fff;}
+.pen-name.yellow{background:#f9a825;color:#111;}
+.pen-time{
+  font-size:55px;font-weight:900;
+  font-variant-numeric:tabular-nums;
+  padding:14px 24px;
+  background:rgba(0,0,0,.6);color:#fff;
+}
+
+/* Goal / Event overlay */
+#event-overlay{
+  position:fixed;top:0;left:0;width:2000px;height:2000px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px;
+  z-index:10;pointer-events:none;
+  opacity:0;transition:opacity .4s;
+}
+#event-overlay.active{opacity:1;}
+#ev-bg{position:absolute;top:0;left:0;width:100%;height:100%;opacity:.93;}
+#ev-logo{position:relative;z-index:2;width:400px;height:400px;object-fit:contain;filter:drop-shadow(0 12px 40px rgba(0,0,0,.7));}
+#ev-text{
+  position:relative;z-index:2;
+  font-size:220px;line-height:1.05;letter-spacing:6px;
+  color:#fff;text-align:center;
+  text-shadow:0 10px 40px rgba(0,0,0,.6);
+  animation:blink .55s step-start infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+</style>
+</head>
+<body>
+  <div class="color-bar"></div>
+  <img class="logo" id="logo" src="" alt="" style="visibility:hidden">
+  <div class="abbr" id="abbr">STL</div>
+  <div class="score" id="score">0</div>
+  <div class="pen-area" id="pen-area"></div>
+
+  <div id="event-overlay">
+    <div id="ev-bg"></div>
+    <img id="ev-logo" src="" alt="" style="display:none">
+    <div id="ev-text">GOAL</div>
+  </div>
+
+<script>
+const SIDE = 'right';
+const WS_URL=(location.protocol==='https:'?'wss://':'ws://')+location.host;
+let ws, prevState=null;
+const logoCache={left:null,right:null};
+
+function connect(){
+  try{ws=new WebSocket(WS_URL);}catch{setTimeout(connect,3000);return;}
+  ws.onmessage=e=>{
+    try{
+      const m=JSON.parse(e.data);
+      if(m.type==='state') applyState(m.state);
+      if(m.type==='tick')  { applyTick(m); }
+    }catch{}
+  };
+  ws.onclose=()=>setTimeout(connect,3000);
+  ws.onerror=()=>ws.close();
+}
+
+function applyState(s){
+  const team = s.rightTeam;
+  document.documentElement.style.setProperty('--color', team.color||'#1e90ff');
+
+  // Logo
+  setLogo(document.getElementById('logo'), team.logo, 'left');
+
+  // Abbr
+  document.getElementById('abbr').textContent = team.abbr;
+
+  // Score bump
+  const sc = document.getElementById('score');
+  if(prevState && s.rightTeam.score !== prevState.leftTeam.score) bump(sc);
+  sc.textContent = team.score;
+
+  // Event
+  applyEvent(s);
+
+  // Penalties
+  applyPenalties(s.penalties||[]);
+
+  prevState = JSON.parse(JSON.stringify(s));
+}
+
+function applyTick(t){
+  applyPenalties(t.penalties||[]);
+}
+
+function applyEvent(s){
+  const ev = s.activeEvent;
+  const overlay = document.getElementById('event-overlay');
+
+  // Goal
+  const isGoal = ev && ev.side===SIDE && (ev.kind==='goal'||ev.kind==='goal_double');
+  // Secret/Pres
+  const isEv   = ev && ev.side===SIDE && (ev.kind==='secret_card'||ev.kind==='presidential');
+
+  if(isGoal){
+    document.getElementById('ev-bg').style.background = s.rightTeam.color||'#1e90ff';
+    document.getElementById('ev-text').textContent = ev.kind==='goal_double'?'GOAL X2':'GOAL';
+    const logo = logoCache.right;
+    if(logo){document.getElementById('ev-logo').src=logo;document.getElementById('ev-logo').style.display='';}
+    overlay.classList.add('active');
+  } else if(isEv){
+    document.getElementById('ev-bg').style.background = ev.kind==='secret_card'?'#1476d4':'#22a84a';
+    document.getElementById('ev-text').textContent = ev.kind==='secret_card'?'SECRET\nCARD':'RIGORE\nPRESIDENZIALE';
+    const logo = logoCache.right;
+    if(logo){document.getElementById('ev-logo').src=logo;document.getElementById('ev-logo').style.display='';}
+    overlay.classList.add('active');
+  } else {
+    overlay.classList.remove('active');
+  }
+}
+
+function applyPenalties(penalties){
+  const container = document.getElementById('pen-area');
+  const sidePens  = penalties.filter(p=>p.side===SIDE);
+  Array.from(container.children).forEach(child=>{
+    if(!sidePens.find(p=>String(p.id)===child.dataset.id)){
+      child.classList.remove('active');
+      setTimeout(()=>child.remove(),350);
+    }
+  });
+  sidePens.forEach(p=>{
+    let row=container.querySelector(`[data-id="${p.id}"]`);
+    if(!row){
+      row=document.createElement('div');row.className='pen-row';row.dataset.id=p.id;
+      const cc=p.kind==='expulsion'?'red':'yellow';
+      row.innerHTML=`<div class="pen-name ${cc}">${p.name}</div><div class="pen-time">${fmt(p.seconds)}</div>`;
+      container.appendChild(row);
+      requestAnimationFrame(()=>row.classList.add('active'));
+    } else {
+      const t=row.querySelector('.pen-time');if(t)t.textContent=fmt(p.seconds);
+    }
+  });
+}
+
+function setLogo(el,src,key){
+  if(!el)return;
+  if(src&&src.startsWith('__LOGO_')){
+    if(logoCache[key]){el.src=logoCache[key];el.style.visibility='visible';}
+    return;
+  }
+  if(src){logoCache[key]=src;el.src=src;el.style.visibility='visible';}
+  else   {logoCache[key]=null;el.src='';el.style.visibility='hidden';}
+}
+function bump(el){el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump');setTimeout(()=>el.classList.remove('bump'),400);}
+function fmt(s){s=Math.max(0,s);const m=Math.floor(s/60),sec=s%60;return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;}
+
+if(document.readyState==='complete')connect();
+else window.addEventListener('load',connect);
+</script>
+</body>
+</html>

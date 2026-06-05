@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<title>LED Wall – Timer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  width:2000px;height:2000px;
+  background:transparent;overflow:hidden;
+  font-family:Impact,Haettenschweiler,'Arial Narrow Bold',sans-serif;
+  color:#fff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.timer{
+  font-size:420px;line-height:1;
+  letter-spacing:-8px;
+  color:#fff;
+  font-variant-numeric:tabular-nums;
+  text-shadow:0 8px 60px rgba(0,0,0,.8);
+}
+.period{
+  font-family:Arial,sans-serif;
+  font-size:60px;font-weight:900;
+  letter-spacing:6px;
+  color:rgba(255,255,255,.7);
+  text-transform:uppercase;
+  margin-top:20px;
+  text-align:center;
+}
+</style>
+</head>
+<body>
+  <div class="timer" id="timer">00:00</div>
+  <div class="period" id="period">1° TEMPO</div>
+
+<script>
+const WS_URL=(location.protocol==='https:'?'wss://':'ws://')+location.host;
+let ws,t;
+function connect(){
+  try{ws=new WebSocket(WS_URL);}catch{setTimeout(connect,3000);return;}
+  ws.onmessage=e=>{
+    const m=JSON.parse(e.data);
+    if(m.type==='state'){
+      document.getElementById('timer').textContent=fmt(m.state.timer.seconds);
+      document.getElementById('period').textContent=m.state.timer.period;
+    }
+    if(m.type==='tick'){
+      document.getElementById('timer').textContent=fmt(m.seconds);
+    }
+  };
+  ws.onclose=()=>setTimeout(connect,3000);
+  ws.onerror=()=>ws.close();
+}
+function fmt(s){s=Math.max(0,s);const m=Math.floor(s/60),sec=s%60;return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;}
+if(document.readyState==='complete')connect();
+else window.addEventListener('load',connect);
+</script>
+</body>
+</html>
