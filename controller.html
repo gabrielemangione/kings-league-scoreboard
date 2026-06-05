@@ -222,18 +222,14 @@ hr{border:0;border-top:1px solid var(--border);margin:10px 0;}
   <!-- Timer -->
   <div class="card ga">
     <div class="ct">Timer</div>
-    <div class="timer-big" id="t-disp">10:00</div>
-    <div class="dir-toggle">
-      <button class="btn gh btn-sm" id="dir-down" onclick="setDir('down')">▼ Rovescia</button>
-      <button class="btn gh btn-sm" id="dir-up"   onclick="setDir('up')">▲ Avanti</button>
-    </div>
+    <div class="timer-big" id="t-disp">00:00</div>
     <div class="tctrl">
       <button class="btn g btn-md" id="btn-start" style="width:100%" onclick="timerStart()">▶ Start</button>
     </div>
     <div class="row" style="margin-bottom:8px;">
-      <div class="field"><div class="lbl">Min</div><input type="number" id="t-min" value="10" min="0" max="99"></div>
-      <div class="field"><div class="lbl">Sec</div><input type="number" id="t-sec" value="0"  min="0" max="59"></div>
-      <div><button class="btn gh btn-md" onclick="timerSet()">Set</button></div>
+      <div class="field"><div class="lbl">Durata (min)</div><input type="number" id="t-min" value="10" min="1" max="99"></div>
+      <div class="field"><div class="lbl">Sec</div><input type="number" id="t-sec" value="0" min="0" max="59"></div>
+      <div><button class="btn gh btn-md" onclick="timerSetLimit()">Set</button></div>
     </div>
     <div class="field">
       <div class="lbl">Periodo</div>
@@ -402,11 +398,8 @@ function syncUI(s) {
   document.getElementById('sb-p').textContent    = s.timer.period;
   document.getElementById('sb-s').textContent    = `${s.leftTeam.score} – ${s.rightTeam.score}`;
   document.getElementById('sb-e').textContent    = s.activeEvent ? `${s.activeEvent.kind} (${s.activeEvent.side})` : '—';
-  document.getElementById('sb-d').textContent    = s.timer.direction==='up' ? '▲' : '▼';
   document.getElementById('phase-cur').textContent = s.matchPhase || '—';
   document.getElementById('btn-start').textContent = s.timer.running ? '⏸ Pausa' : '▶ Start';
-  document.getElementById('dir-down').className = 'btn btn-sm '+(s.timer.direction==='down'?'bl':'gh');
-  document.getElementById('dir-up').className   = 'btn btn-sm '+(s.timer.direction==='up'  ?'bl':'gh');
   syncPow('left','pres', s.powerCards.left.presidential);
   syncPow('left','sec',  s.powerCards.left.secret);
   syncPow('right','pres',s.powerCards.right.presidential);
@@ -478,23 +471,21 @@ function resetScore(side){
 }
 
 function timerStart(){
-  if(S&&S.timer.running)send({type:'timer_stop'});
+  if(S&&S.timer.running) send({type:'timer_stop'});
   else send({type:'timer_start'});
 }
-function timerStop(){send({type:'timer_stop'});}
-function timerSet(){
-  const m=parseInt(document.getElementById('t-min').value)||0;
+function timerSetLimit(){
+  const m=parseInt(document.getElementById('t-min').value)||10;
   const s=parseInt(document.getElementById('t-sec').value)||0;
-  send({type:'timer_set',seconds:m*60+s});
+  send({type:'timer_set_limit', limit: m*60+s});
 }
 function timerReset(){
   const m=parseInt(document.getElementById('t-min').value)||10;
   const s=parseInt(document.getElementById('t-sec').value)||0;
   const period=document.getElementById('period-sel').value;
-  send({type:'timer_reset',seconds:m*60+s,period,direction:timerDir});
+  send({type:'timer_reset', limit:m*60+s, period});
 }
 function sendPeriod(){send({type:'period_set',period:document.getElementById('period-sel').value});}
-function setDir(dir){timerDir=dir;send({type:'timer_direction',direction:dir});}
 
 function activatePowerCard(side, card) {
   // Rimuove la barretta

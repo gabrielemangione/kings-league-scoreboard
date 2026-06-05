@@ -29,7 +29,7 @@ let state = {
   leftTeam:  { abbr:'STL', color:'#1e90ff', score:0, logo:null },
   rightTeam: { abbr:'PBL', color:'#ff2d8d', score:0, logo:null },
   centerLogo: null,
-  timer: { seconds:600, running:false, direction:'down', period:'1° TEMPO' },
+  timer: { seconds:0, running:false, limit:600, period:'1° TEMPO' },
   powerCards: {
     left:  { presidential:true, secret:true },
     right: { presidential:true, secret:true },
@@ -88,20 +88,19 @@ function startTimer() {
   if (timerInterval) return;
   state.timer.running = true;
   timerInterval = setInterval(() => {
-    const dir = state.timer.direction === 'up' ? 1 : -1;
-    state.timer.seconds += dir;
-    if (state.timer.seconds < 0) state.timer.seconds = 0;
 
-    if (state.timer.direction === 'up') {
-      const e = state.timer.seconds;
-      if      (e < 60)  state.matchPhase = null;
-      else if (e < 120) state.matchPhase = '1vs1';
-      else if (e < 180) state.matchPhase = '2vs2';
-      else if (e < 240) state.matchPhase = '3vs3';
-      else if (e < 300) state.matchPhase = '4vs4';
-      else              state.matchPhase = '5vs5';
+    // Conta in avanti
+    state.timer.seconds++;
+
+    // Ferma al limite
+    if (state.timer.seconds >= state.timer.limit) {
+      state.timer.seconds = state.timer.limit;
+      stopTimer();
+      broadcastState();
+      return;
     }
 
+    // Penalties sincronizzate col timer (scalano di 1 secondo)
     state.penalties = state.penalties.map(p => {
       if (p.seconds > 0) p.seconds--;
       return p;
@@ -142,17 +141,13 @@ wss.on('connection', ws => {
 
       case 'timer_reset':
         stopTimer();
-        state.timer.seconds   = msg.seconds   ?? 600;
-        state.timer.period    = msg.period    ?? '1° TEMPO';
-        state.timer.direction = msg.direction ?? 'down';
+        state.timer.seconds = 0;
+        state.timer.limit   = msg.limit ?? 600;
+        state.timer.period  = msg.period ?? '1° TEMPO';
         break;
 
-      case 'timer_set':
-        state.timer.seconds = msg.seconds;
-        break;
-
-      case 'timer_direction':
-        state.timer.direction = msg.direction;
+      case 'timer_set_limit':
+        state.timer.limit = msg.limit;
         break;
 
       case 'period_set':
