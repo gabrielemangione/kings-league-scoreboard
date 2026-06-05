@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<title>Kings League – LED Wall</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --left-color:#1e90ff;
+  --right-color:#ff2d8d;
+}
+body{
+  width:2000px;height:2000px;
+  background:transparent;overflow:hidden;
+  font-family:Impact,Haettenschweiler,'Arial Narrow Bold',sans-serif;
+  color:#fff;
+}
+
+/* ═══════════════════════
+   LAYOUT PRINCIPALE
+═══════════════════════ */
+.wrap{
+  width:2000px;height:2000px;
+  display:flex;flex-direction:column;
+  align-items:center;
+  background:transparent;
+}
+
+/* ── TIMER ── */
+.timer-section{
+  width:100%;
+  display:flex;align-items:center;justify-content:center;
+  padding:60px 0 40px;
+  border-bottom:4px solid rgba(255,255,255,.15);
+}
+.timer-display{
+  font-size:260px;line-height:1;
+  letter-spacing:-4px;
+  color:#fff;
+  font-variant-numeric:tabular-nums;
+  text-shadow:0 8px 40px rgba(0,0,0,.8);
+}
+.period-display{
+  font-family:Arial,sans-serif;
+  font-size:40px;font-weight:900;
+  letter-spacing:4px;color:rgba(255,255,255,.6);
+  text-align:center;margin-top:10px;
+  text-transform:uppercase;
+}
+
+/* ── TEAMS ── */
+.teams-section{
+  width:100%;flex:1;
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:0;
+}
+
+.team-block{
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:60px 40px 40px;
+  gap:24px;
+  position:relative;
+  background:transparent;
+}
+.team-block.left {border-right:2px solid rgba(255,255,255,.1);}
+
+/* linea colore in cima ad ogni blocco */
+.team-block::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;
+  height:8px;
+}
+.team-block.left::before  {background:var(--left-color);}
+.team-block.right::before {background:var(--right-color);}
+
+.team-logo{
+  width:280px;height:280px;
+  object-fit:contain;
+  filter:drop-shadow(0 8px 24px rgba(0,0,0,.7));
+}
+.team-logo.hidden{visibility:hidden;}
+
+.team-abbr{
+  font-size:160px;line-height:1;
+  letter-spacing:4px;color:#fff;
+  text-shadow:0 6px 20px rgba(0,0,0,.7);
+  text-align:center;
+}
+
+.team-score{
+  font-size:220px;line-height:1;
+  font-variant-numeric:tabular-nums;
+  text-shadow:0 8px 30px rgba(0,0,0,.8);
+  transition:transform .2s,color .2s;
+}
+.team-block.left  .team-score{color:var(--left-color);}
+.team-block.right .team-score{color:var(--right-color);}
+.team-score.bump{transform:scale(1.12);}
+
+/* ── PENALTY BANNER ── */
+.penalty-area{
+  width:100%;min-height:100px;
+  display:flex;flex-direction:column;gap:8px;
+  align-items:center;
+}
+
+.pen-row{
+  display:flex;align-items:stretch;
+  opacity:0;transform:translateY(8px);
+  transition:opacity .3s,transform .3s;
+  width:100%;
+}
+.pen-row.active{opacity:1;transform:translateY(0);}
+
+.pen-name{
+  font-family:'Arial Narrow',Arial,sans-serif;
+  font-size:36px;font-weight:900;letter-spacing:2px;
+  padding:12px 24px;
+  text-transform:uppercase;white-space:nowrap;
+  flex:1;text-align:center;
+}
+.pen-name.red   {background:#e53935;color:#fff;}
+.pen-name.yellow{background:#f9a825;color:#111;}
+
+.pen-time{
+  font-size:36px;font-weight:900;
+  font-variant-numeric:tabular-nums;
+  padding:12px 20px;
+  background:rgba(0,0,0,.6);color:#fff;
+  white-space:nowrap;
+}
+
+/* ── GOAL BANNER ── */
+#goal-banner{
+  position:fixed;top:0;left:0;
+  width:2000px;height:2000px;
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:40px;
+  z-index:20;pointer-events:none;
+  opacity:0;transition:opacity .4s;
+}
+#goal-banner.active{opacity:1;}
+
+.goal-bg{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  opacity:.92;
+}
+
+.goal-text{
+  position:relative;z-index:2;
+  font-size:320px;line-height:1;letter-spacing:8px;
+  color:#fff;text-align:center;
+  text-shadow:0 12px 40px rgba(0,0,0,.6);
+  animation:goalBlink .4s step-start infinite;
+}
+.goal-logo{
+  position:relative;z-index:2;
+  width:320px;height:320px;object-fit:contain;
+  filter:drop-shadow(0 8px 24px rgba(0,0,0,.7));
+}
+@keyframes goalBlink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ── SECRET / PRESIDENTIAL BANNER ── */
+#event-banner{
+  position:fixed;top:0;left:0;
+  width:2000px;height:2000px;
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:30px;
+  z-index:15;pointer-events:none;
+  opacity:0;transition:opacity .4s;
+}
+#event-banner.active{opacity:1;}
+
+.event-bg{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+}
+.event-text{
+  position:relative;z-index:2;
+  font-size:180px;line-height:1.1;letter-spacing:4px;
+  color:#fff;text-align:center;
+  text-shadow:0 8px 30px rgba(0,0,0,.6);
+  animation:blink .55s step-start infinite;
+}
+.event-logo{
+  position:relative;z-index:2;
+  width:280px;height:280px;object-fit:contain;
+  filter:drop-shadow(0 8px 24px rgba(0,0,0,.7));
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- TIMER -->
+  <div class="timer-section">
+    <div>
+      <div class="timer-display" id="timer-disp">00:00</div>
+      <div class="period-display" id="period-disp">1° TEMPO</div>
+    </div>
+  </div>
+
+  <!-- TEAMS -->
+  <div class="teams-section">
+
+    <!-- SINISTRA -->
+    <div class="team-block left">
+      <img class="team-logo" id="logo-left" src="" alt="" style="visibility:hidden">
+      <div class="team-abbr" id="abbr-left">STL</div>
+      <div class="team-score" id="score-left">0</div>
+      <div class="penalty-area" id="pen-left"></div>
+    </div>
+
+    <!-- DESTRA -->
+    <div class="team-block right">
+      <img class="team-logo" id="logo-right" src="" alt="" style="visibility:hidden">
+      <div class="team-abbr" id="abbr-right">PBL</div>
+      <div class="team-score" id="score-right">0</div>
+      <div class="penalty-area" id="pen-right"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- GOAL BANNER -->
+<div id="goal-banner">
+  <div class="goal-bg" id="goal-bg"></div>
+  <img class="goal-logo" id="goal-logo" src="" alt="">
+  <div class="goal-text" id="goal-text">GOAL</div>
+  <img class="goal-logo" id="goal-logo2" src="" alt="">
+</div>
+
+<!-- EVENT BANNER (secret / presidential) -->
+<div id="event-banner">
+  <div class="event-bg" id="event-bg"></div>
+  <img class="event-logo" id="event-logo" src="" alt="">
+  <div class="event-text" id="event-text">SECRET CARD</div>
+</div>
+
+<script>
+let reconnectTimer, prevState = null;
+const $ = id => document.getElementById(id);
+const logoCache = { left: null, right: null, center: null };
+
+function applyState(s) {
+  document.documentElement.style.setProperty('--left-color',  s.leftTeam.color  || '#1e90ff');
+  document.documentElement.style.setProperty('--right-color', s.rightTeam.color || '#ff2d8d');
+
+  setLogo($('logo-left'),  s.leftTeam.logo,  'left');
+  setLogo($('logo-right'), s.rightTeam.logo, 'right');
+
+  // Scores
+  const ls=$('score-left'), rs=$('score-right');
+  if (prevState && s.leftTeam.score  !== prevState.leftTeam.score)  doBump(ls);
+  if (prevState && s.rightTeam.score !== prevState.rightTeam.score) doBump(rs);
+  ls.textContent = s.leftTeam.score;
+  rs.textContent = s.rightTeam.score;
+
+  // Abbr
+  $('abbr-left').textContent  = s.leftTeam.abbr;
+  $('abbr-right').textContent = s.rightTeam.abbr;
+
+  // Timer
+  $('timer-disp').textContent  = fmt(s.timer.seconds);
+  $('period-disp').textContent = s.timer.period;
+
+  // Events
+  applyEvent(s);
+
+  // Penalties
+  applyPenalties(s.penalties || []);
+
+  prevState = JSON.parse(JSON.stringify(s));
+}
+
+function applyTick(t) {
+  $('timer-disp').textContent = fmt(t.seconds);
+  applyPenalties(t.penalties || []);
+}
+
+function applyEvent(s) {
+  const ev = s.activeEvent;
+
+  // Goal
+  const isGoal = ev && (ev.kind === 'goal' || ev.kind === 'goal_double');
+  const gb = $('goal-banner');
+  if (isGoal) {
+    const color = ev.side === 'left' ? (s.leftTeam.color||'#1e90ff') : (s.rightTeam.color||'#ff2d8d');
+    const logo  = logoCache[ev.side];
+    $('goal-bg').style.background = color;
+    $('goal-text').textContent = ev.kind === 'goal_double' ? 'GOAL X2' : 'GOAL';
+    if (logo) { $('goal-logo').src=$('goal-logo2').src=logo; $('goal-logo').style.display=$('goal-logo2').style.display=''; }
+    else      { $('goal-logo').style.display=$('goal-logo2').style.display='none'; }
+    gb.classList.add('active');
+  } else {
+    gb.classList.remove('active');
+  }
+
+  // Secret / Presidential
+  const isEv = ev && (ev.kind === 'secret_card' || ev.kind === 'presidential');
+  const eb = $('event-banner');
+  if (isEv) {
+    const color = ev.kind === 'secret_card' ? '#1476d4' : '#22a84a';
+    const logo  = logoCache[ev.side];
+    $('event-bg').style.background = color;
+    $('event-text').textContent = ev.kind === 'secret_card' ? 'SECRET\nCARD' : 'RIGORE\nPRESIDENZIALE';
+    if (logo) { $('event-logo').src=logo; $('event-logo').style.display=''; }
+    else      { $('event-logo').style.display='none'; }
+    eb.classList.add('active');
+  } else {
+    eb.classList.remove('active');
+  }
+}
+
+function applyPenalties(penalties) {
+  ['left','right'].forEach(side => {
+    const container = $('pen-' + side);
+    const sidePens  = penalties.filter(p => p.side === side);
+
+    Array.from(container.children).forEach(child => {
+      if (!sidePens.find(p => String(p.id) === child.dataset.id)) {
+        child.classList.remove('active');
+        setTimeout(() => child.remove(), 350);
+      }
+    });
+
+    sidePens.forEach(p => {
+      let row = container.querySelector(`[data-id="${p.id}"]`);
+      if (!row) {
+        row = document.createElement('div');
+        row.className  = 'pen-row';
+        row.dataset.id = p.id;
+        const cc = p.kind === 'expulsion' ? 'red' : 'yellow';
+        row.innerHTML = `<div class="pen-name ${cc}">${p.name}</div><div class="pen-time">${fmt(p.seconds)}</div>`;
+        container.appendChild(row);
+        requestAnimationFrame(() => row.classList.add('active'));
+      } else {
+        const t = row.querySelector('.pen-time');
+        if (t) t.textContent = fmt(p.seconds);
+      }
+    });
+  });
+}
+
+function setLogo(el, src, key) {
+  if (!el) return;
+  if (src && src.startsWith('__LOGO_')) {
+    if (logoCache[key]) { el.src = logoCache[key]; el.style.visibility = 'visible'; }
+    return;
+  }
+  if (src) { logoCache[key] = src; el.src = src; el.style.visibility = 'visible'; }
+  else      { logoCache[key] = null; el.src = ''; el.style.visibility = 'hidden'; }
+}
+
+function doBump(el) {
+  el.classList.remove('bump'); void el.offsetWidth;
+  el.classList.add('bump');
+  setTimeout(() => el.classList.remove('bump'), 400);
+}
+
+function fmt(s) {
+  s = Math.max(0, s);
+  const m = Math.floor(s/60), sec = s%60;
+  return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+// WebSocket
+const WS_URL = (location.protocol==='https:'?'wss://':'ws://') + location.host;
+let ws;
+function connect() {
+  try { ws = new WebSocket(WS_URL); } catch { retry(); return; }
+  ws.onopen    = () => clearTimeout(reconnectTimer);
+  ws.onmessage = e => {
+    try {
+      const m = JSON.parse(e.data);
+      if (m.type === 'state') applyState(m.state);
+      if (m.type === 'tick')  applyTick(m);
+    } catch {}
+  };
+  ws.onclose = retry;
+  ws.onerror = () => ws.close();
+}
+function retry() { reconnectTimer = setTimeout(connect, 3000); }
+if (document.readyState === 'complete') connect();
+else window.addEventListener('load', connect);
+</script>
+</body>
+</html>
