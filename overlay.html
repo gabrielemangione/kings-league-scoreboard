@@ -267,9 +267,9 @@ const $ = id => document.getElementById(id);
 function applyState(s) {
   document.documentElement.style.setProperty('--left-color',  s.leftTeam.color  || '#1e90ff');
   document.documentElement.style.setProperty('--right-color', s.rightTeam.color || '#ff2d8d');
-  setLogo($('logo-left'),  s.leftTeam.logo);
-  setLogo($('logo-right'), s.rightTeam.logo);
-  setLogo($('clogo'),      s.centerLogo);
+  setLogo($('logo-left'),  s.leftTeam.logo,  'left');
+  setLogo($('logo-right'), s.rightTeam.logo, 'right');
+  setLogo($('clogo'),      s.centerLogo,     'center');
   const ls=$('score-left'), rs=$('score-right');
   if (prevState && s.leftTeam.score  !== prevState.leftTeam.score)  doBump(ls,'bl');
   if (prevState && s.rightTeam.score !== prevState.rightTeam.score) doBump(rs,'br');
@@ -355,7 +355,7 @@ function applyGoal(s) {
     goalActive=true;
     const side=ev.side;
     const color=side==='left'?(s.leftTeam.color||'#1e90ff'):(s.rightTeam.color||'#ff2d8d');
-    const logo=side==='left'?s.leftTeam.logo:s.rightTeam.logo;
+    const logo = logoCache[side] || (side==='left'?s.leftTeam.logo:s.rightTeam.logo);
     const txt=ev.kind==='goal_double'?'GOAL X2':'GOAL';
     banner.style.background=color;
     track.style.animation='none'; track.innerHTML=''; track.style.background='transparent';
@@ -409,10 +409,23 @@ function applyMatchPhase(phase, centerLogo) {
   else        { mp.classList.remove('active'); cl.style.opacity=centerLogo?'1':'0'; }
 }
 
-function setLogo(el, src) {
+// Cache loghi in memoria — non si perdono quando arrivano stati senza logo
+const logoCache = { left: null, right: null, center: null };
+
+function setLogo(el, src, cacheKey) {
   if (!el) return;
-  if (src) { el.src = src; el.style.visibility = 'visible'; }
-  else      { el.src = ''; el.style.visibility = 'hidden'; }
+  // Se arriva un placeholder, usa la cache
+  if (src && src.startsWith('__LOGO_')) {
+    if (logoCache[cacheKey]) { el.src = logoCache[cacheKey]; el.style.visibility = 'visible'; }
+    return;
+  }
+  if (src) {
+    logoCache[cacheKey] = src;
+    el.src = src; el.style.visibility = 'visible';
+  } else {
+    logoCache[cacheKey] = null;
+    el.src = ''; el.style.visibility = 'hidden';
+  }
 }
 function setUsed(el,used){ el.classList.toggle('used',used); }
 function doBump(el,cls){ el.classList.remove('bump','bl','br'); void el.offsetWidth; el.classList.add('bump',cls); setTimeout(()=>el.classList.remove('bump','bl','br'),500); }

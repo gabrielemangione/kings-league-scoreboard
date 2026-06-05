@@ -24,6 +24,7 @@ const server = http.createServer((req, res) => {
 
 const wss = new WebSocket.Server({ server });
 
+// ── State ─────────────────────────────────────────────────────────────────────
 let state = {
   leftTeam:  { abbr:'STL', color:'#1e90ff', score:0, logo:null },
   rightTeam: { abbr:'PBL', color:'#ff2d8d', score:0, logo:null },
@@ -43,13 +44,36 @@ let state = {
 let timerInterval = null;
 let penaltyIdCounter = 0;
 
+// ── Broadcast helpers ──────────────────────────────────────────────────────────
+
+// Stato completo SENZA loghi (loghi mandati separatamente solo a chi si connette)
+function stateWithoutLogos() {
+  return {
+    ...state,
+    leftTeam:  { ...state.leftTeam,  logo: state.leftTeam.logo  ? '__LOGO_L__' : null },
+    rightTeam: { ...state.rightTeam, logo: state.rightTeam.logo ? '__LOGO_R__' : null },
+    centerLogo: state.centerLogo ? '__LOGO_C__' : null,
+  };
+}
+
+// Broadcast leggero — stato senza loghi
 function broadcast(msg) {
   const str = JSON.stringify(msg);
   wss.clients.forEach(c => { if (c.readyState === WebSocket.OPEN) c.send(str); });
 }
 
+// Broadcast stato completo CON loghi (solo per nuove connessioni)
+function sendFullState(ws) {
+  ws.send(JSON.stringify({ type:'state', state }));
+}
+
+// Broadcast stato senza loghi (per tutti i comandi real-time)
+function broadcastState() {
+  broadcast({ type:'state', state: stateWithoutLogos() });
+}
+
+// Tick timer leggero
 function broadcastTimerTick() {
-  // Manda solo il tick del timer — molto più leggero
   const str = JSON.stringify({
     type: 'tick',
     seconds: state.timer.seconds,
@@ -59,6 +83,7 @@ function broadcastTimerTick() {
   wss.clients.forEach(c => { if (c.readyState === WebSocket.OPEN) c.send(str); });
 }
 
+// ── Timer ──────────────────────────────────────────────────────────────────────
 function startTimer() {
   if (timerInterval) return;
   state.timer.running = true;
@@ -96,13 +121,15 @@ function scheduleEventClear(evId) {
   setTimeout(() => {
     if (state.activeEvent && state.activeEvent.id === evId) {
       state.activeEvent = null;
-      broadcast({ type:'state', state });
+      broadcastState();
     }
   }, 4000);
 }
 
+// ── WebSocket ─────────────────────────────────────────────────────────────────
 wss.on('connection', ws => {
-  ws.send(JSON.stringify({ type:'state', state }));
+  // Nuova connessione: manda stato COMPLETO con loghi
+  sendFullState(ws);
 
   ws.on('message', raw => {
     let msg;
@@ -140,17 +167,20 @@ wss.on('connection', ws => {
       case 'team_config':
         if (msg.side === 'left')  Object.assign(state.leftTeam,  msg.data);
         if (msg.side === 'right') Object.assign(state.rightTeam, msg.data);
-        break;
+        // Config con logo: manda stato completo
+        broadcastState();
+        return;
 
       case 'center_logo':
         state.centerLogo = msg.logo;
-        break;
+        broadcastState();
+        return;
 
       case 'power_card':
         state.powerCards[msg.side][msg.card] = msg.value;
         break;
 
-      case 'secret_card':
+      case 'secret_card': {
         if (msg.active) {
           const scId = Date.now() + Math.random();
           state.activeEvent = { kind:'secret_card', side:msg.side, id:scId };
@@ -159,8 +189,9 @@ wss.on('connection', ws => {
           state.activeEvent = null;
         }
         break;
+      }
 
-      case 'presidential':
+      case 'presidential': {
         if (msg.active) {
           const prId = Date.now() + Math.random();
           state.activeEvent = { kind:'presidential', side:msg.side, id:prId };
@@ -169,6 +200,7 @@ wss.on('connection', ws => {
           state.activeEvent = null;
         }
         break;
+      }
 
       case 'goal':
         if (msg.side === 'left')  state.leftTeam.score  += msg.double ? 2 : 1;
@@ -189,10 +221,8 @@ wss.on('connection', ws => {
       case 'penalty_add':
         state.penalties.push({
           id: ++penaltyIdCounter,
-          side: msg.side,
-          kind: msg.kind,
-          name: msg.name,
-          seconds: 120,
+          side: msg.side, kind: msg.kind,
+          name: msg.name, seconds: 120,
         });
         break;
 
@@ -215,9 +245,17 @@ wss.on('connection', ws => {
       case 'goal_x2_badge':
         state.goalX2Badge = msg.active;
         break;
+
+      case 'activatePowerCard':
+        state.powerCards[msg.side][msg.card] = false;
+        const kind = msg.card === 'presidential' ? 'presidential' : 'secret_card';
+        const pcId = Date.now() + Math.random();
+        state.activeEvent = { kind, side: msg.side, id: pcId };
+        scheduleEventClear(pcId);
+        break;
     }
 
-    broadcast({ type:'state', state });
+    broadcastState();
   });
 });
 
