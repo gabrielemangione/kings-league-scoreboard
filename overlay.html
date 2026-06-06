@@ -8,8 +8,8 @@
 :root{
   --left-color:#1e90ff;
   --right-color:#ff2d8d;
-  --secret-color:#1476d4;
-  --pres-color:#22a84a;
+  --secret-color:#ff6a00;
+  --pres-color:#1476d4;
 }
 body{
   width:1920px;height:1080px;
@@ -49,8 +49,8 @@ body{
 .pi.left {left:318px;}
 .pi.right{right:318px;}
 .pc{width:22px;height:115px;border:none;transition:opacity .3s;}
-.pc.presidential{background:#22a84a;}
-.pc.secret      {background:#1476d4;}
+.pc.presidential{background:#1476d4;}
+.pc.secret      {background:#ff6a00;}
 .pc.used{opacity:0;}
 
 /* ── TEAM AREAS ── */
@@ -66,8 +66,8 @@ body{
 .team-left  .abbr{margin-left:0;}
 .team-right .abbr{margin-right:0;}
 
-.team-area.ev-secret{background:var(--secret-color)!important;}
-.team-area.ev-pres  {background:var(--pres-color)!important;}
+.team-area.ev-secret{background:linear-gradient(135deg,#ff6a00,#ee0979,#7b2ff7)!important;}
+.team-area.ev-pres  {background:#1476d4!important;}
 
 /* slide-in da sinistra per team-left, da destra per team-right */
 .team-area.ev-slide-left {animation:slideInLeft .45s cubic-bezier(.22,.68,0,1.15) 1;}
@@ -77,8 +77,8 @@ body{
 
 .team-area.pc-flash-pres{animation:flashPres .6s ease 1;}
 .team-area.pc-flash-sec {animation:flashSec  .6s ease 1;}
-@keyframes flashPres{0%,40%{background:#22a84a}100%{background:transparent}}
-@keyframes flashSec {0%,40%{background:#1476d4}100%{background:transparent}}
+@keyframes flashPres{0%,40%{background:#1476d4}100%{background:transparent}}
+@keyframes flashSec {0%,40%{background:#ff6a00}100%{background:transparent}}
 
 .abbr{
   font-size:68px;line-height:1;letter-spacing:2px;
@@ -164,7 +164,7 @@ body{
 #star-player{
   position:absolute;top:-6px;
   display:flex;align-items:center;gap:7px;
-  background:#ffd400;padding:5px 16px 5px 10px;
+  background:#ffffff;padding:5px 16px 5px 10px;
   z-index:10;opacity:0;transition:opacity .4s,transform .4s;
 }
 #star-player.side-left {left:380px; transform:translateX(-50px);}
@@ -195,7 +195,7 @@ body{
   background:rgba(5,5,5,.92);border:3px solid rgba(255,255,255,.35);
   border-radius:8px;padding:10px 32px;
   font-family:Impact,sans-serif;font-size:68px;font-weight:900;
-  letter-spacing:4px;color:#fff;white-space:nowrap;text-transform:uppercase;
+  letter-spacing:4px;color:#111;white-space:nowrap;text-transform:uppercase;
   text-shadow:0 4px 14px rgba(0,0,0,.7);
 }
 
