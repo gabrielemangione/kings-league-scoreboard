@@ -170,6 +170,7 @@ function setLogo(el,src,key){
   else   {logoCache[key]=null;el.src='';el.style.visibility='hidden';}
 }
 function bump(el){el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump');setTimeout(()=>el.classList.remove('bump'),400);}
+function fmt(s){s=Math.max(0,s);const m=Math.floor(s/60),sec=s%60;return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;}
 
 if(document.readyState==='complete')connect();
 else window.addEventListener('load',connect);
