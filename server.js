@@ -217,7 +217,7 @@ wss.on('connection', ws => {
         state.penalties.push({
           id: ++penaltyIdCounter,
           side: msg.side, kind: msg.kind,
-          name: msg.name, seconds: msg.kind === 'suspension' ? 300 : 120,
+          name: msg.name, seconds: msg.kind === 'expulsion' ? 300 : 120,
         });
         break;
 
