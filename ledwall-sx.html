@@ -126,8 +126,8 @@ function applyState(s){
   // Star player
   const sp=s.starPlayer;
   const spEl=document.getElementById('star-player');
-  if(sp && sp.side===SIDE){
-    document.getElementById('star-name').textContent=sp.name;
+  if(sp && sp.left){
+    document.getElementById('star-name').textContent=sp.left;
     spEl.classList.add('active');
   } else {
     spEl.classList.remove('active');

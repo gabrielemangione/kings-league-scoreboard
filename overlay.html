@@ -246,6 +246,15 @@ body{
     <span class="star-name" id="star-name">GIOCATORE</span>
   </div>
 
+  <!-- Star player destra (attivo solo quando entrambi i lati hanno star player) -->
+  <div id="star-player-right" class="side-right" style="top:32px;">
+    <span class="star-icon">⭐</span>
+    <span class="star-name" id="star-name-right">GIOCATORE</span>
+  </div>
+
+  <!-- Audio sirena (file sirena.mp3 nella root del progetto) -->
+  <audio id="siren-audio" src="sirena.mp3" preload="auto"></audio>
+
   <div id="penalties-left"></div>
   <div id="penalties-right"></div>
 
@@ -379,8 +388,37 @@ function applyGoal(s) {
 
 function applyStarPlayer(sp) {
   const el=$('star-player');
-  if (sp) { $('star-name').textContent=sp.name; el.className='side-'+sp.side; void el.offsetWidth; el.classList.add('active'); }
-  else el.classList.remove('active');
+  // sp è ora { left: nome|null, right: nome|null }
+  // Mostra il primo lato attivo trovato (priorità: left)
+  // Se entrambi attivi, mostra entrambi via classe doppia
+  if (sp && (sp.left || sp.right)) {
+    if (sp.left && sp.right) {
+      // Entrambi attivi: mostra quello di sinistra (l'overlay ne gestisce uno alla volta)
+      // Il secondo viene mostrato con priorità destra
+      $('star-name').textContent = sp.left;
+      el.className = 'side-left';
+      void el.offsetWidth;
+      el.classList.add('active');
+      // Aggiorna anche star-player-right se esiste
+      const er=$('star-player-right');
+      if(er){ $('star-name-right').textContent=sp.right; er.className='side-right'; void er.offsetWidth; er.classList.add('active'); }
+    } else if (sp.left) {
+      $('star-name').textContent = sp.left;
+      el.className = 'side-left';
+      void el.offsetWidth;
+      el.classList.add('active');
+      const er=$('star-player-right'); if(er) er.classList.remove('active');
+    } else {
+      $('star-name').textContent = sp.right;
+      el.className = 'side-right';
+      void el.offsetWidth;
+      el.classList.add('active');
+      const er=$('star-player-right'); if(er) er.classList.remove('active');
+    }
+  } else {
+    el.classList.remove('active');
+    const er=$('star-player-right'); if(er) er.classList.remove('active');
+  }
 }
 
 function applyPenalties(penalties) {
@@ -433,7 +471,11 @@ function fmt(s){ s=Math.max(0,s); const m=Math.floor(s/60),sec=s%60; return `${S
 
 const WS_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
 let ws;
-function connect(){ try{ws=new WebSocket(WS_URL);}catch{retry();return;} ws.onopen=()=>clearTimeout(reconnectTimer); ws.onmessage=e=>{try{const m=JSON.parse(e.data);if(m.type==='state')applyState(m.state);if(m.type==='tick'){$('timer-disp').textContent=fmt(m.seconds);applyPenalties(m.penalties||[]);applyMatchPhase(m.matchPhase,prevState?prevState.centerLogo:null);}}catch{}}; ws.onclose=retry; ws.onerror=()=>ws.close(); }
+function playSiren(){
+  const a=$('siren-audio');
+  if(a){a.currentTime=0;a.play().catch(()=>{});}
+}
+function connect(){ try{ws=new WebSocket(WS_URL);}catch{retry();return;} ws.onopen=()=>clearTimeout(reconnectTimer); ws.onmessage=e=>{try{const m=JSON.parse(e.data);if(m.type==='state')applyState(m.state);if(m.type==='tick'){$('timer-disp').textContent=fmt(m.seconds);applyPenalties(m.penalties||[]);applyMatchPhase(m.matchPhase,prevState?prevState.centerLogo:null);}if(m.type==='siren')playSiren();}catch{}}; ws.onclose=retry; ws.onerror=()=>ws.close(); }
 function retry(){ reconnectTimer=setTimeout(connect,3000); }
 if(document.readyState==='complete')connect(); else window.addEventListener('load',connect);
 </script>

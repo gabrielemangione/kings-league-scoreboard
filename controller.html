@@ -231,6 +231,10 @@ hr{border:0;border-top:1px solid var(--border);margin:10px 0;}
       <div class="field"><div class="lbl">Sec</div><input type="number" id="t-sec" value="0" min="0" max="59"></div>
       <div><button class="btn gh btn-md" onclick="timerSetLimit()">Set</button></div>
     </div>
+    <div class="row" style="margin-bottom:8px;">
+      <div class="field"><div class="lbl">Modifica timer (mm:ss)</div><input type="text" id="t-manual" placeholder="es. 17:00" maxlength="5"></div>
+      <div><button class="btn go btn-md" onclick="timerSetManual()">↵ Vai</button></div>
+    </div>
     <div class="field">
       <div class="lbl">Periodo</div>
       <select id="period-sel" onchange="sendPeriod()">
@@ -240,7 +244,10 @@ hr{border:0;border-top:1px solid var(--border);margin:10px 0;}
         <option>RIGORI</option>
       </select>
     </div>
-    <button class="btn gh btn-sm" style="width:100%" onclick="timerReset()">↺ Reset</button>
+    <div style="display:flex;gap:7px;">
+      <button class="btn gh btn-sm" style="flex:1" onclick="timerReset()">↺ Reset</button>
+      <button class="btn go btn-sm" style="flex:1" onclick="startSecondHalf()">▶ 2° TEMPO</button>
+    </div>
   </div>
 
   <!-- Logo centrale -->
@@ -484,6 +491,19 @@ function timerReset(){
   const s=parseInt(document.getElementById('t-sec').value)||0;
   const period=document.getElementById('period-sel').value;
   send({type:'timer_reset', limit:m*60+s, period});
+}
+function timerSetManual(){
+  const raw=document.getElementById('t-manual').value.trim();
+  const parts=raw.split(':');
+  if(parts.length!==2)return;
+  const m=parseInt(parts[0])||0, s=parseInt(parts[1])||0;
+  send({type:'timer_set', seconds: m*60+s});
+}
+function startSecondHalf(){
+  send({type:'second_half_start', limit: 40*60});
+  // aggiorna selector visivamente
+  const sel=document.getElementById('period-sel');
+  sel.value='2° TEMPO';
 }
 function sendPeriod(){send({type:'period_set',period:document.getElementById('period-sel').value});}
 

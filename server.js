@@ -35,7 +35,7 @@ let state = {
     right: { presidential:true, secret:true },
   },
   activeEvent: null,
-  starPlayer:  null,
+  starPlayer:  { left: null, right: null },
   matchPhase:  null,
   goalX2Badge: false,
   penalties: [],
@@ -83,6 +83,9 @@ function broadcastTimerTick() {
   wss.clients.forEach(c => { if (c.readyState === WebSocket.OPEN) c.send(str); });
 }
 
+// ── Minuti sirena auto-stop (in secondi) ─────────────────────────────────────
+const SIREN_STOPS = [17*60, 20*60, 23*60, 36*60, 40*60];
+
 // ── Timer ──────────────────────────────────────────────────────────────────────
 function startTimer() {
   if (timerInterval) return;
@@ -92,10 +95,19 @@ function startTimer() {
     // Conta in avanti
     state.timer.seconds++;
 
+    // Auto-stop + sirena ai minuti chiave
+    if (SIREN_STOPS.includes(state.timer.seconds)) {
+      stopTimer();
+      broadcast({ type: 'siren' });
+      broadcastState();
+      return;
+    }
+
     // Ferma al limite
     if (state.timer.seconds >= state.timer.limit) {
       state.timer.seconds = state.timer.limit;
       stopTimer();
+      broadcast({ type: 'siren' });
       broadcastState();
       return;
     }
@@ -146,6 +158,11 @@ wss.on('connection', ws => {
         state.timer.period  = msg.period ?? '1° TEMPO';
         break;
 
+      case 'timer_set':
+        // Modifica manuale del timer: msg.seconds = valore in secondi
+        state.timer.seconds = Math.max(0, msg.seconds);
+        break;
+
       case 'timer_set_limit':
         state.timer.limit = msg.limit;
         break;
@@ -153,6 +170,15 @@ wss.on('connection', ws => {
       case 'period_set':
         state.timer.period = msg.period;
         break;
+
+      case 'second_half_start':
+        stopTimer();
+        state.timer.seconds = 20 * 60;   // 2° tempo parte da 20:00
+        state.timer.limit   = msg.limit ?? 40 * 60;
+        state.timer.period  = '2° TEMPO';
+        startTimer();
+        broadcastState();
+        return;
 
       case 'score':
         if (msg.side === 'left')  state.leftTeam.score  = Math.max(0, state.leftTeam.score  + (msg.delta||0));
@@ -210,7 +236,8 @@ wss.on('connection', ws => {
         break;
 
       case 'star_player':
-        state.starPlayer = msg.active ? { side:msg.side, name:msg.name } : null;
+        if (msg.side === 'left')  state.starPlayer.left  = msg.active ? msg.name : null;
+        if (msg.side === 'right') state.starPlayer.right = msg.active ? msg.name : null;
         break;
 
       case 'penalty_add':
