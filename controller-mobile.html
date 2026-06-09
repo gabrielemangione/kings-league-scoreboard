@@ -124,6 +124,35 @@ hr{border:0;border-top:1px solid var(--border);margin:10px 0;}
 
 .statusbar{background:var(--surface);border-top:1px solid var(--border);padding:7px 20px;font-size:11px;color:var(--dim);display:flex;gap:18px;}
 .statusbar span{color:var(--text);font-weight:600;}
+
+/* ── MOBILE TAB LAYOUT ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .main { display: block !important; padding: 0 !important; }
+  .col-wrap { display: none; }
+  .col-wrap.tab-active { display: flex !important; flex-direction: column; gap: 10px; padding: 12px 14px 80px; }
+  .tab-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    display: flex; background: var(--surface); border-top: 1px solid var(--border);
+  }
+  .tab-btn {
+    flex: 1; padding: 12px 4px; text-align: center;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--dim);
+    border: none; background: none; cursor: pointer;
+    border-top: 3px solid transparent; transition: all .2s;
+  }
+  .tab-btn.t-sx     { color: var(--al); border-color: var(--al); }
+  .tab-btn.t-timer  { color: var(--gold); border-color: var(--gold); }
+  .tab-btn.t-dx     { color: var(--ar); border-color: var(--ar); }
+  .tab-btn.t-extra  { color: #a78bfa; border-color: #a78bfa; }
+  .statusbar { display: none; }
+  header { padding: 10px 14px; }
+  .logo-title { font-size: 15px; }
+}
+@media (min-width: 769px) {
+  .tab-bar { display: none !important; }
+  .col-wrap { display: flex !important; flex-direction: column; gap: 12px; }
+}
 </style>
 </head>
 <body>
@@ -146,7 +175,7 @@ hr{border:0;border-top:1px solid var(--border);margin:10px 0;}
 <!-- ══════════════════
      COL SINISTRA
 ══════════════════ -->
-<div style="display:flex;flex-direction:column;gap:12px;">
+<div class="col-wrap tab-active" id="col-sx" style="display:flex;flex-direction:column;gap:12px;">
 
   <!-- Team left -->
   <div class="card la">
@@ -224,7 +253,7 @@ hr{border:0;border-top:1px solid var(--border);margin:10px 0;}
 <!-- ══════════════════
      COL CENTRO
 ══════════════════ -->
-<div style="display:flex;flex-direction:column;gap:12px;">
+<div class="col-wrap" id="col-timer" style="display:flex;flex-direction:column;gap:12px;">
 
   <!-- Timer -->
   <div class="card ga">
@@ -289,11 +318,31 @@ hr{border:0;border-top:1px solid var(--border);margin:10px 0;}
 
 </div><!-- /col centro -->
 
+<!-- col extra (solo mobile tab ⚙) -->
+<div class="col-wrap" id="col-extra" style="display:flex;flex-direction:column;gap:12px;">
+  <div class="card ca">
+    <div class="ct">🔊 Sirena</div>
+    <div style="display:flex;gap:7px;margin-bottom:8px;">
+      <button class="btn gh btn-sm" id="mbtn-local"  onclick="setAudio('local')"  style="flex:1;border-color:var(--gold);color:var(--gold);">🔊 Locale</button>
+      <button class="btn gh btn-sm" id="mbtn-remote" onclick="setAudio('remote')" style="flex:1;">📡 Overlay</button>
+      <button class="btn gh btn-sm" id="mbtn-both"   onclick="setAudio('both')"   style="flex:1;">🔊+📡</button>
+    </div>
+    <button class="btn go btn-sm" style="width:100%" onclick="testSiren()">▶ Test sirena</button>
+  </div>
+  <div class="card ca">
+    <div class="ct">Logo Centrale</div>
+    <label class="upload-btn" for="c-logo-f2">📂 Carica logo Kings League</label>
+    <input type="file" id="c-logo-f2" accept="image/*" onchange="uploadCenter(this)">
+    <button class="btn gh btn-sm" style="width:100%;margin-top:7px" onclick="clearCenter()">🗑 Rimuovi</button>
+  </div>
+  <button class="btn d btn-md" style="width:100%" onclick="clearAll()">🗑 Cancella tutti gli eventi</button>
+</div><!-- /col extra -->
+
 
 <!-- ══════════════════
      COL DESTRA
 ══════════════════ -->
-<div style="display:flex;flex-direction:column;gap:12px;">
+<div class="col-wrap" id="col-dx" style="display:flex;flex-direction:column;gap:12px;">
 
   <!-- Team right -->
   <div class="card ra">
@@ -368,6 +417,12 @@ hr{border:0;border-top:1px solid var(--border);margin:10px 0;}
 </div><!-- /col right -->
 </div><!-- /main -->
 
+<div class="tab-bar">
+  <button class="tab-btn t-sx"    onclick="switchTab('sx')"   >◀ SX</button>
+  <button class="tab-btn"         onclick="switchTab('timer')" id="tbtn-timer">⏱ TIMER</button>
+  <button class="tab-btn"         onclick="switchTab('dx')"    id="tbtn-dx">DX ▶</button>
+  <button class="tab-btn"         onclick="switchTab('extra')" id="tbtn-extra">⚙</button>
+</div>
 <div class="statusbar">
   <div>Timer: <span id="sb-t">—</span></div>
   <div>Periodo: <span id="sb-p">—</span></div>
@@ -635,11 +690,32 @@ function fmt(s){
   return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
 }
 
+// ── Tab switcher (mobile) ─────────────────────────────────────────────────────
+function switchTab(t){
+  const map = {sx:'col-sx', timer:'col-timer', dx:'col-dx', extra:'col-extra'};
+  const colors = {sx:'var(--al)',timer:'var(--gold)',dx:'var(--ar)',extra:'#a78bfa'};
+  Object.entries(map).forEach(([key,id])=>{
+    const col=document.getElementById(id);
+    if(col) col.classList.toggle('tab-active', key===t);
+    const btn=document.getElementById('tbtn-'+key);
+    if(btn){
+      btn.style.color=key===t?colors[key]:'';
+      btn.style.borderColor=key===t?colors[key]:'transparent';
+    }
+  });
+  // sync pulsante sx che non ha id
+  const btns=document.querySelectorAll('.tab-btn');
+  if(btns[0]){btns[0].style.color=t==='sx'?'var(--al)':'var(--dim)';btns[0].style.borderColor=t==='sx'?'var(--al)':'transparent';}
+}
+function testSiren(){ playSiren(); }
+
 // ── Audio Mode ────────────────────────────────────────────────────────────────
 let audioMode = 'local';
 function setAudio(mode){
   audioMode = mode;
   ['local','remote','both'].forEach(m=>{
+    const mb=document.getElementById('mbtn-'+m);
+    if(mb){mb.style.borderColor=m===mode?'var(--gold)':'var(--border)';mb.style.color=m===mode?'var(--gold)':'';}
     const b=document.getElementById('abtn-'+m);
     if(!b)return;
     b.style.borderColor = m===mode ? 'var(--gold)' : 'var(--border)';
