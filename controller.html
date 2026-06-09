@@ -480,13 +480,33 @@ function clearCenter(){
 function sendScore(side,delta){send({type:'score',side,delta});}
 function resetScore(side){
   send({type:'score_set', side, value:0});
+  if(side==='left'||side==='both'){
+    document.getElementById('s-left').textContent='0';
+    const sb=document.getElementById('sb-sl');if(sb)sb.textContent='0';
+  }
+  if(side==='right'||side==='both'){
+    document.getElementById('s-right').textContent='0';
+    const sb=document.getElementById('sb-sr');if(sb)sb.textContent='0';
+  }
 }
 
 function resetAll(){
   send({type:'score_set', side:'both'});
   send({type:'timer_stop'});
-  send({type:'timer_reset', limit: (parseInt(document.getElementById('t-min').value)||20)*60 + (parseInt(document.getElementById('t-sec').value)||0), period: document.getElementById('period-sel').value});
+  const m=parseInt(document.getElementById('t-min').value)||20;
+  const s=parseInt(document.getElementById('t-sec').value)||0;
+  const period=document.getElementById('period-sel').value;
+  send({type:'timer_reset', limit:m*60+s, period});
   send({type:'penalty_clear_all'});
+  // Aggiorna display subito
+  document.getElementById('s-left').textContent='0';
+  document.getElementById('s-right').textContent='0';
+  const sbsl=document.getElementById('sb-sl');if(sbsl)sbsl.textContent='0';
+  const sbsr=document.getElementById('sb-sr');if(sbsr)sbsr.textContent='0';
+  document.getElementById('t-disp').textContent='00:00';
+  const sbt=document.getElementById('sb-t');if(sbt)sbt.textContent='00:00';
+  const btnStart=document.getElementById('btn-start');
+  if(btnStart){btnStart.textContent='▶ Start';btnStart.className='btn g btn-md';}
 }
 
 function timerStart(){
@@ -503,6 +523,10 @@ function timerReset(){
   const s=parseInt(document.getElementById('t-sec').value)||0;
   const period=document.getElementById('period-sel').value;
   send({type:'timer_reset', limit:m*60+s, period});
+  document.getElementById('t-disp').textContent='00:00';
+  const sbt=document.getElementById('sb-t');if(sbt)sbt.textContent='00:00';
+  const btnStart=document.getElementById('btn-start');
+  if(btnStart){btnStart.textContent='▶ Start';btnStart.className='btn g btn-md';}
 }
 function sendPeriod(){send({type:'period_set',period:document.getElementById('period-sel').value});}
 
