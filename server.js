@@ -177,6 +177,12 @@ wss.on('connection', ws => {
         if (msg.side === 'right') state.rightTeam.score = Math.max(0, state.rightTeam.score + (msg.delta||0));
         break;
 
+      case 'score_set':
+        if (msg.side === 'left')  state.leftTeam.score  = Math.max(0, msg.value||0);
+        if (msg.side === 'right') state.rightTeam.score = Math.max(0, msg.value||0);
+        if (msg.side === 'both')  { state.leftTeam.score = 0; state.rightTeam.score = 0; }
+        break;
+
       case 'team_config':
         if (msg.side === 'left')  Object.assign(state.leftTeam,  msg.data);
         if (msg.side === 'right') Object.assign(state.rightTeam, msg.data);

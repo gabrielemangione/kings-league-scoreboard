@@ -251,7 +251,10 @@ hr{border:0;border-top:1px solid var(--border);margin:10px 0;}
         <option>RIGORI</option>
       </select>
     </div>
-    <button class="btn gh btn-sm" style="width:100%" onclick="timerReset()">↺ Reset</button>
+    <div style="display:flex;gap:7px;">
+      <button class="btn gh btn-sm" style="flex:1" onclick="timerReset()">↺ Reset Timer</button>
+      <button class="btn d btn-sm" style="flex:1" onclick="resetAll()">⚡ Reset Totale</button>
+    </div>
   </div>
 
   <!-- Logo centrale -->
@@ -476,9 +479,14 @@ function clearCenter(){
 
 function sendScore(side,delta){send({type:'score',side,delta});}
 function resetScore(side){
-  if(!S)return;
-  const cur=side==='left'?S.leftTeam.score:S.rightTeam.score;
-  send({type:'score',side,delta:-cur});
+  send({type:'score_set', side, value:0});
+}
+
+function resetAll(){
+  send({type:'score_set', side:'both'});
+  send({type:'timer_stop'});
+  send({type:'timer_reset', limit: (parseInt(document.getElementById('t-min').value)||20)*60 + (parseInt(document.getElementById('t-sec').value)||0), period: document.getElementById('period-sel').value});
+  send({type:'penalty_clear_all'});
 }
 
 function timerStart(){
