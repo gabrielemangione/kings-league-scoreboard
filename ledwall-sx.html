@@ -126,7 +126,7 @@ function applyState(s){
   // Star player
   const sp=s.starPlayer;
   const spEl=document.getElementById('star-player');
-  if(sp && sp.left){
+  if(sp && sp.left && sp.left.trim()!==''){
     document.getElementById('star-name').textContent=sp.left;
     spEl.classList.add('active');
   } else {

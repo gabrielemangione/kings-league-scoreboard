@@ -119,7 +119,7 @@ function applyState(s){
 
   const sp=s.starPlayer;
   const spEl=document.getElementById('star-player');
-  if(sp && sp.right){
+  if(sp && sp.right && sp.right.trim()!==''){
     document.getElementById('star-name').textContent=sp.right;
     spEl.classList.add('active');
   } else {

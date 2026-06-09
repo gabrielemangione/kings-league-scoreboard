@@ -161,7 +161,8 @@ wss.on('connection', ws => {
       case 'timer_set':
         // Modifica manuale del timer: msg.seconds = valore in secondi
         state.timer.seconds = Math.max(0, msg.seconds);
-        break;
+        broadcastState();
+        return;
 
       case 'timer_set_limit':
         state.timer.limit = msg.limit;
@@ -170,15 +171,6 @@ wss.on('connection', ws => {
       case 'period_set':
         state.timer.period = msg.period;
         break;
-
-      case 'second_half_start':
-        stopTimer();
-        state.timer.seconds = 20 * 60;   // 2° tempo parte da 20:00
-        state.timer.limit   = msg.limit ?? 40 * 60;
-        state.timer.period  = '2° TEMPO';
-        startTimer();
-        broadcastState();
-        return;
 
       case 'score':
         if (msg.side === 'left')  state.leftTeam.score  = Math.max(0, state.leftTeam.score  + (msg.delta||0));

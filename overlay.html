@@ -388,33 +388,28 @@ function applyGoal(s) {
 
 function applyStarPlayer(sp) {
   const el=$('star-player');
-  // sp è ora { left: nome|null, right: nome|null }
-  // Mostra il primo lato attivo trovato (priorità: left)
-  // Se entrambi attivi, mostra entrambi via classe doppia
-  if (sp && (sp.left || sp.right)) {
-    if (sp.left && sp.right) {
-      // Entrambi attivi: mostra quello di sinistra (l'overlay ne gestisce uno alla volta)
-      // Il secondo viene mostrato con priorità destra
-      $('star-name').textContent = sp.left;
-      el.className = 'side-left';
-      void el.offsetWidth;
-      el.classList.add('active');
-      // Aggiorna anche star-player-right se esiste
-      const er=$('star-player-right');
-      if(er){ $('star-name-right').textContent=sp.right; er.className='side-right'; void er.offsetWidth; er.classList.add('active'); }
-    } else if (sp.left) {
-      $('star-name').textContent = sp.left;
-      el.className = 'side-left';
-      void el.offsetWidth;
-      el.classList.add('active');
-      const er=$('star-player-right'); if(er) er.classList.remove('active');
-    } else {
-      $('star-name').textContent = sp.right;
-      el.className = 'side-right';
-      void el.offsetWidth;
-      el.classList.add('active');
-      const er=$('star-player-right'); if(er) er.classList.remove('active');
-    }
+  const hasLeft  = sp && sp.left  && sp.left.trim()  !== '';
+  const hasRight = sp && sp.right && sp.right.trim() !== '';
+
+  if (hasLeft && hasRight) {
+    $('star-name').textContent = sp.left;
+    el.className = 'side-left';
+    void el.offsetWidth;
+    el.classList.add('active');
+    const er=$('star-player-right');
+    if(er){ $('star-name-right').textContent=sp.right; er.className='side-right'; void er.offsetWidth; er.classList.add('active'); }
+  } else if (hasLeft) {
+    $('star-name').textContent = sp.left;
+    el.className = 'side-left';
+    void el.offsetWidth;
+    el.classList.add('active');
+    const er=$('star-player-right'); if(er) er.classList.remove('active');
+  } else if (hasRight) {
+    $('star-name').textContent = sp.right;
+    el.className = 'side-right';
+    void el.offsetWidth;
+    el.classList.add('active');
+    const er=$('star-player-right'); if(er) er.classList.remove('active');
   } else {
     el.classList.remove('active');
     const er=$('star-player-right'); if(er) er.classList.remove('active');
