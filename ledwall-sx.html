@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<title>LED Wall – Squadra Sinistra</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--color:#1e90ff;}
+body{
+  width:1000px;height:2000px;
+  background:transparent;overflow:hidden;
+  font-family:Impact,Haettenschweiler,'Arial Narrow Bold',sans-serif;
+  color:#fff;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:50px;
+  position:relative;
+}
+
+/* linea colore in cima */
+.color-bar{
+  position:absolute;top:0;left:0;right:0;
+  height:12px;background:var(--color);
+}
+
+.logo{
+  width:600px;height:600px;
+  object-fit:contain;
+  filter:drop-shadow(0 12px 40px rgba(0,0,0,.7));
+}
+.logo.hidden{visibility:hidden;}
+
+.score{
+  font-size:400px;line-height:1;
+  font-variant-numeric:tabular-nums;
+  color:var(--color);
+  text-shadow:0 12px 60px rgba(0,0,0,.8);
+}
+
+/* Star Player */
+#star-player{
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  background:#ffffff;
+  padding:16px 36px;
+  width:90%;
+  opacity:0;
+  transition:opacity .4s,transform .4s;
+  transform:translateY(20px);
+}
+#star-player.active{
+  opacity:1;
+  transform:translateY(0);
+}
+.pen-row{
+  display:flex;align-items:stretch;
+  opacity:0;transform:translateY(8px);
+  transition:opacity .3s,transform .3s;
+}
+.pen-row.active{opacity:1;transform:translateY(0);}
+.pen-name{
+  font-family:'Arial Narrow',Arial,sans-serif;
+  font-size:52px;font-weight:900;letter-spacing:2px;
+  padding:14px 24px;text-transform:uppercase;
+  flex:1;text-align:center;
+}
+.pen-name.red   {background:#e53935;color:#fff;}
+.pen-name.yellow{background:#f9a825;color:#111;}
+.pen-time{
+  font-size:52px;font-weight:900;
+  font-variant-numeric:tabular-nums;
+  padding:14px 20px;
+  background:rgba(0,0,0,.6);color:#fff;
+  white-space:nowrap;
+}
+.star-name{
+  font-family:Arial,sans-serif;
+  font-size:60px;font-weight:900;
+  letter-spacing:2px;color:#111;
+  white-space:nowrap;text-transform:uppercase;
+}
+</style>
+</head>
+<body>
+  <div class="color-bar"></div>
+  <img class="logo" id="logo" src="" alt="" style="visibility:hidden">
+  <div class="score" id="score">0</div>
+  <div id="star-player">
+    <span class="star-icon">⭐</span>
+    <span class="star-name" id="star-name">GIOCATORE</span>
+  </div>
+  <div id="pen-area" style="display:flex;flex-direction:column;gap:10px;width:90%;"></div>
+
+<script>
+const SIDE='left';
+const WS_URL=(location.protocol==='https:'?'wss://':'ws://')+location.host;
+let ws, prevScore=null;
+const logoCache={};
+
+function connect(){
+  try{ws=new WebSocket(WS_URL);}catch{setTimeout(connect,3000);return;}
+  ws.onmessage=e=>{
+    try{
+      const m=JSON.parse(e.data);
+      if(m.type==='state') applyState(m.state);
+      if(m.type==='tick')  applyPenalties(m.penalties||[]);
+    }catch{}
+  };
+  ws.onclose=()=>setTimeout(connect,3000);
+  ws.onerror=()=>ws.close();
+}
+
+function applyState(s){
+  const team=s.leftTeam;
+
+  // Colore
+  document.documentElement.style.setProperty('--color', team.color||'#1e90ff');
+
+  // Logo
+  setLogo(document.getElementById('logo'), team.logo, 'left');
+
+  // Score
+  const sc=document.getElementById('score');
+  sc.textContent=team.score;
+  prevScore=team.score;
+
+  // Star player
+  const sp=s.starPlayer;
+  const spEl=document.getElementById('star-player');
+  if(sp && sp.left && sp.left.trim()!==''){
+    document.getElementById('star-name').textContent=sp.left;
+    spEl.classList.add('active');
+  } else {
+    spEl.classList.remove('active');
+  }
+
+  // Penalties
+  applyPenalties(s.penalties||[]);
+}
+
+function applyPenalties(penalties){
+  const container=document.getElementById('pen-area');
+  const sidePens=penalties.filter(p=>p.side===SIDE);
+  Array.from(container.children).forEach(child=>{
+    if(!sidePens.find(p=>String(p.id)===child.dataset.id)){
+      child.classList.remove('active');
+      setTimeout(()=>child.remove(),350);
+    }
+  });
+  sidePens.forEach(p=>{
+    let row=container.querySelector(`[data-id="${p.id}"]`);
+    if(!row){
+      row=document.createElement('div');row.className='pen-row';row.dataset.id=p.id;
+      const cc=p.kind==='expulsion'?'red':'yellow';
+      row.innerHTML=`<div class="pen-name ${cc}">${p.name}</div><div class="pen-time">${fmt(p.seconds)}</div>`;
+      container.appendChild(row);
+      requestAnimationFrame(()=>row.classList.add('active'));
+    } else {
+      const t=row.querySelector('.pen-time');if(t)t.textContent=fmt(p.seconds);
+    }
+  });
+}
+
+function setLogo(el,src,key){
+  if(!el)return;
+  if(src&&src.startsWith('__LOGO_')){
+    if(logoCache[key]){el.src=logoCache[key];el.style.visibility='visible';}
+    return;
+  }
+  if(src){logoCache[key]=src;el.src=src;el.style.visibility='visible';}
+  else   {logoCache[key]=null;el.src='';el.style.visibility='hidden';}
+}
+function bump(el){el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump');setTimeout(()=>el.classList.remove('bump'),400);}
+function fmt(s){s=Math.max(0,s);const m=Math.floor(s/60),sec=s%60;return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;}
+
+if(document.readyState==='complete')connect();
+else window.addEventListener('load',connect);
+</script>
+</body>
+</html>

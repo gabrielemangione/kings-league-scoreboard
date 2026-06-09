@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<title>LED Wall – Card Destra</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  width:2000px;height:2000px;
+  background:transparent;overflow:hidden;
+  font-family:Impact,Haettenschweiler,'Arial Narrow Bold',sans-serif;
+  color:#fff;
+}
+#overlay{
+  position:fixed;top:0;left:0;width:2000px;height:2000px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:60px;
+  opacity:0;transition:opacity .4s;
+}
+#overlay.active{opacity:1;}
+#bg{position:absolute;top:0;left:0;width:100%;height:100%;}
+#logo{position:relative;z-index:2;width:500px;height:500px;object-fit:contain;filter:drop-shadow(0 12px 40px rgba(0,0,0,.7));}
+#text{
+  position:relative;z-index:2;
+  font-size:200px;line-height:1.1;letter-spacing:6px;
+  color:#fff;text-align:center;
+  text-shadow:0 10px 40px rgba(0,0,0,.6);
+  animation:blink .55s step-start infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+</style>
+</head>
+<body>
+<div id="overlay">
+  <div id="bg"></div>
+  <img id="logo" src="" alt="" style="display:none">
+  <div id="text">SECRET CARD</div>
+</div>
+<script>
+const SIDE='right';
+const WS_URL=(location.protocol==='https:'?'wss://':'ws://')+location.host;
+let ws;
+const logoCache={};
+
+function connect(){
+  try{ws=new WebSocket(WS_URL);}catch{setTimeout(connect,3000);return;}
+  ws.onmessage=e=>{
+    try{const m=JSON.parse(e.data);if(m.type==='state')applyState(m.state);}catch{}
+  };
+  ws.onclose=()=>setTimeout(connect,3000);
+  ws.onerror=()=>ws.close();
+}
+
+function applyState(s){
+  setLogoCache(s.leftTeam.logo,'left');
+  setLogoCache(s.rightTeam.logo,'right');
+
+  const ev=s.activeEvent;
+  const overlay=document.getElementById('overlay');
+  const isActive=ev&&ev.side===SIDE&&(ev.kind==='secret_card'||ev.kind==='presidential');
+
+  if(isActive){
+    document.getElementById('bg').style.background=ev.kind==='secret_card'?'linear-gradient(135deg,#ff6a00,#ee0979,#7b2ff7)':'#1476d4';
+    document.getElementById('text').textContent=ev.kind==='secret_card'?'SECRET\nCARD':'RIGORE\nPRESIDENZIALE';
+    const logo=logoCache[SIDE];
+    if(logo){document.getElementById('logo').src=logo;document.getElementById('logo').style.display='';}
+    overlay.classList.add('active');
+  } else {
+    overlay.classList.remove('active');
+  }
+}
+
+function setLogoCache(src,key){
+  if(src&&!src.startsWith('__LOGO_')) logoCache[key]=src;
+}
+
+if(document.readyState==='complete')connect();
+else window.addEventListener('load',connect);
+</script>
+</body>
+</html>
