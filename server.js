@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || '127.0.0.1';
+const HOST = process.env.HOST || '0.0.0.0';
 const PUBLIC_DIR = __dirname;
 
 const server = http.createServer((req, res) => {
@@ -297,7 +297,7 @@ server.on('error', err => {
   if (err.code === 'EADDRINUSE') {
     console.error(`Porta ${PORT} gia in uso. Avvia con PORT=3001 npm start oppure libera la porta.`);
   } else if (err.code === 'EACCES' || err.code === 'EPERM') {
-    console.error(`Impossibile ascoltare su ${HOST}:${PORT}. Prova HOST=127.0.0.1 PORT=3001 npm start.`);
+    console.error(`Impossibile ascoltare su ${HOST}:${PORT}. Prova HOST=127.0.0.1 PORT=3001 npm start in locale.`);
   } else {
     console.error(err);
   }

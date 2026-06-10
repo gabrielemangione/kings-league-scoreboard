@@ -20,3 +20,9 @@ Puoi cambiare porta con:
 ```bash
 PORT=3001 npm start
 ```
+
+In locale, se vuoi forzare l'ascolto solo sul tuo computer:
+
+```bash
+HOST=127.0.0.1 PORT=3001 npm start
+```
